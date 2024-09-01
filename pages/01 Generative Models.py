@@ -135,8 +135,8 @@ def tanimoto_similarity(original_data_input_smiles_list, generated_molecules_smi
     for sm in generated_molecules_smiles_list:
         tanimoto_values = []
         for sml in original_data_input_smiles_list:
-            fp_sm = AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(sm), 2)
-            fp_sml = AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(sml), 2)
+            fp_sm = AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(sm), 2, nBits=2048)
+            fp_sml = AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(sml), 2, nBits=2048)
             tanimoto = DataStructs.TanimotoSimilarity(fp_sm, fp_sml)
             tanimoto_values.append(tanimoto)
         for idx, val in enumerate(tanimoto_values):
@@ -215,7 +215,7 @@ if menu == 'VAE':
                                             y=df_generated_data_pca ['Latent Dimension 2'], 
                                             mode='markers', 
                                             name='Generated Molecules',
-                                            marker=dict(color='green')))  # Green color
+                                            marker=dict(color='red')))  # Red color
 
                     # Update layout to include gridlines
                     fig.update_layout(
