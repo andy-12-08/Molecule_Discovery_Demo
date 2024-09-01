@@ -5,6 +5,8 @@ import plotly.graph_objects as go
 from rdkit import Chem
 from rdkit.Chem import Draw
 from rdkit.Chem import Descriptors
+from rdkit.Chem import AllChem
+from rdkit.Chem import DataStructs
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 import numpy as np
@@ -23,6 +25,8 @@ vae = VAE(input_dim=3624, latent_dim=latent_dim)
 vae.load_state_dict(torch.load('models/vae_model.pt'))
 original_data = pd.read_csv('data/test_more_dataNoinionc.csv', header=None, names=['smiles', 'logCMC'])
 original_data_input_smiles_list = original_data.iloc[:, 0].tolist()
+# convert smiles to canonical smiles
+original_data_input_smiles_list = [Chem.MolToSmiles(Chem.MolFromSmiles(sm), canonical=True) for sm in original_data_input_smiles_list]
     
 def encode_data_from_smiles_to_vae_encoded(input_smiles_list):
     input_selfies_list = list(map(sf.encoder, input_smiles_list))
@@ -69,6 +73,8 @@ def generate_vae_molecules(n, original_data_input_smiles_list, height, vocab_ito
             return output_smiles_list
         # Convert the generated molecules to SMILES
         generated_molecules_smiles_list = generated_molecules_to_smiles(generated_molecules)
+        # convert smiles to canonical smiles
+        generated_molecules_smiles_list = [Chem.MolToSmiles(Chem.MolFromSmiles(sm), canonical=True) for sm in generated_molecules_smiles_list]
         # remove duplicates
         generated_molecules_smiles_list = list(set(generated_molecules_smiles_list))
         # remove molecules that are in the original dataset
@@ -123,6 +129,25 @@ def prepare_pca_data(original_df, generated_df):
     return original_data_pca, generated_data_pca
 
 
+def tanimoto_similarity(original_data_input_smiles_list, generated_molecules_smiles_list):
+    similar_molecule_smiles = []
+    tanimoto_similarity_values = []
+    for sm in generated_molecules_smiles_list:
+        tanimoto_values = []
+        for sml in original_data_input_smiles_list:
+            fp_sm = AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(sm), 2)
+            fp_sml = AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(sml), 2)
+            tanimoto = DataStructs.TanimotoSimilarity(fp_sm, fp_sml)
+            tanimoto_values.append(tanimoto)
+        for idx, val in enumerate(tanimoto_values):
+            max_value = max(tanimoto_values)
+            max_value_index = tanimoto_values.index(max_value)
+        similar_molecule_smiles.append(original_data_input_smiles_list[max_value_index])
+        tanimoto_similarity_values.append(max_value)
+    return similar_molecule_smiles, tanimoto_similarity_values
+
+
+
 model_types = ['VAE', 'GAN', 'Transformer']
 menu = st.sidebar.selectbox('Select model type', model_types)
 
@@ -138,7 +163,7 @@ if menu == 'VAE':
             num = int(st.number_input('Number of molecules', key = 'original', min_value=1, max_value=len(original_data_input_smiles_list)))
             selected_original_data = random.sample(original_data_input_smiles_list, num)
             # display the smiles and images of the selected molecules
-            st.markdown('**Selected Molecules**')
+            st.markdown('**Generated Molecules**')
             for i, sm in enumerate(selected_original_data):
                 mol = Chem.MolFromSmiles(sm)
                 if mol:
@@ -150,7 +175,7 @@ if menu == 'VAE':
                 else:    
                     st.write(f"Failed to generate molecule from SMILES: {sm}")
     with tabe2:
-        with st.expander('🟢 Model SurfMOL03212004'):
+        with st.expander('🟢 Model SurfMOL03212024'):
             n = int(st.number_input('Number of molecules'))
             button = st.button('Generate')
             if button:
@@ -203,20 +228,37 @@ if menu == 'VAE':
                     # Display the plot in Streamlit
                     st.plotly_chart(fig, use_container_width=True)
 
-                    # Draw the selected molecules using RDKit along with their SMILES and display them in Streamlit
-                    st.markdown('**Generated Molecules**')
-                    for i, sm in enumerate(selected_n_molecules):
-                        mol = Chem.MolFromSmiles(sm)
-                        if mol:  # Check if the molecule was successfully created
-                            st.write(f'Molecule {i+1}')
-                            st.write(f'SMILES: {sm}')
-                            st.write('Molecular Structure:')
-                            # Convert the molecule to an image
-                            img = Draw.MolToImage(mol)
-                            # Display the image in Streamlit
-                            st.image(img)
-                        else:
-                            st.write(f"Failed to generate molecule from SMILES: {sm}")
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        # Draw the selected molecules using RDKit along with their SMILES and display them in Streamlit
+                        st.markdown('**Generated Molecules**')
+                        for i, sm in enumerate(selected_n_molecules):
+                            mol = Chem.MolFromSmiles(sm)
+                            if mol:  # Check if the molecule was successfully created
+                                st.write(f'Molecule {i+1}')
+                                st.write(f'SMILES: {sm}')
+                                st.write('Molecular Structure:')
+                                # Convert the molecule to an image
+                                img = Draw.MolToImage(mol)
+                                # Display the image in Streamlit
+                                st.image(img)
+                            else:
+                                st.write(f"Failed to generate molecule from SMILES: {sm}")
+
+                    with col2:
+                        similar_molecule_smiles, tanimoto_similarity_values = tanimoto_similarity(original_data_input_smiles_list, selected_n_molecules)
+                        st.markdown('**Similar Molecules**')
+                        for i, sm in enumerate(similar_molecule_smiles):
+                            mol = Chem.MolFromSmiles(sm)
+                            if mol:
+                                st.write(f'Original Molecule Similar to Molecule {i+1} : {sm}')    
+                                st.write(f'Tanimoto Coefficient: {tanimoto_similarity_values[i]:.2f}')
+                                st.write('Molecular Structure:')
+                                img = Draw.MolToImage(mol)
+                                st.image(img)
+                            else:
+                                st.write(f"Failed to generate molecule from SMILES: {sm}")
+
                 else:
                     st.error('Please enter a valid number of molecules.')
 
