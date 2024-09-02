@@ -49,7 +49,6 @@ def encode_data_from_smiles_to_vae_encoded(input_smiles_list):
         encoded_flattened_dataset = vae.encoder(flattened_dataset)
     return encoded_flattened_dataset, height, vocab_itos, width
 
-
 def generate_vae_molecules(n, original_data_input_smiles_list, height, vocab_itos, width):
     # Generate molecules from the trained VAE
     vae.eval()
@@ -82,9 +81,7 @@ def generate_vae_molecules(n, original_data_input_smiles_list, height, vocab_ito
         # select n molecules randomly from the generated molecules
         selected_n_molecules = random.sample(generated_molecules_smiles_list, n)
         return selected_n_molecules
-
-
-        
+       
 def features_df(smiles_list):
     # Get a list of descriptor functions
     descriptor_list = [desc[0] for desc in Descriptors._descList]
@@ -127,7 +124,6 @@ def prepare_pca_data(original_df, generated_df):
     original_data_pca = pca.fit_transform(original_df)
     generated_data_pca = pca.transform(generated_df)
     return original_data_pca, generated_data_pca
-
 
 def tanimoto_similarity(original_data_input_smiles_list, generated_molecules_smiles_list):
     similar_molecule_smiles = []
@@ -184,7 +180,7 @@ if menu == 'VAE':
         
                     encoded_flattened_dataset, height, vocab_itos, width = encode_data_from_smiles_to_vae_encoded(original_data_input_smiles_list)
                     selected_n_molecules = generate_vae_molecules(n, original_data_input_smiles_list, height, vocab_itos, width)
-
+                    similar_molecule_smiles, tanimoto_similarity_values = tanimoto_similarity(original_data_input_smiles_list, selected_n_molecules)
                     # Compute molecular descriptors for the generated molecules
                     generated_molecules_df = features_df(selected_n_molecules)
                     # Compute molecular descriptors for the original dataset
@@ -192,31 +188,26 @@ if menu == 'VAE':
                     # Prepare the data for PCA
                     original_data_pca, generated_data_pca = prepare_pca_data(original_molecules_df, generated_molecules_df)
                     
-                    
                     df_original_data_pca = pd.DataFrame({
                     'Latent Dimension 1': original_data_pca[:, 0],
                     'Latent Dimension 2': original_data_pca[:, 1],
                     })
-
                     df_generated_data_pca  = pd.DataFrame({
                     'Latent Dimension 1': generated_data_pca [:, 0],
                     'Latent Dimension 2': generated_data_pca [:, 1],
                     })
-
                     # Create the initial scatter plot for the flattened dataset
                     fig = px.scatter(df_original_data_pca, 
                                     x='Latent Dimension 1', 
                                     y='Latent Dimension 2', 
                                     title='Latent Space Visualization',
                                     color_discrete_sequence=['#1f77b4'])  # Light blue color
-
                     # Add the scatter plot for the generated molecules
                     fig.add_trace(go.Scatter(x=df_generated_data_pca ['Latent Dimension 1'], 
                                             y=df_generated_data_pca ['Latent Dimension 2'], 
                                             mode='markers', 
                                             name='Generated Molecules',
                                             marker=dict(color='red')))  # Red color
-
                     # Update layout to include gridlines
                     fig.update_layout(
                         xaxis_title='Latent Dimension 1',
@@ -224,44 +215,36 @@ if menu == 'VAE':
                         xaxis=dict(showgrid=True),  # Enable vertical gridlines
                         yaxis=dict(showgrid=True)   # Enable horizontal gridlines
                     )
-
                     # Display the plot in Streamlit
                     st.plotly_chart(fig, use_container_width=True)
 
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        # Draw the selected molecules using RDKit along with their SMILES and display them in Streamlit
-                        st.markdown('**Generated Molecules**')
-                        for i, sm in enumerate(selected_n_molecules):
-                            mol = Chem.MolFromSmiles(sm)
-                            if mol:  # Check if the molecule was successfully created
-                                st.write(f'Molecule {i+1}')
-                                st.write(f'SMILES: {sm}')
-                                st.write('Molecular Structure:')
-                                # Convert the molecule to an image
-                                img = Draw.MolToImage(mol)
-                                # Display the image in Streamlit
-                                st.image(img)
-                            else:
-                                st.write(f"Failed to generate molecule from SMILES: {sm}")
-
-                    with col2:
-                        similar_molecule_smiles, tanimoto_similarity_values = tanimoto_similarity(original_data_input_smiles_list, selected_n_molecules)
-                        st.markdown('**Similar Molecules**')
-                        for i, sm in enumerate(similar_molecule_smiles):
-                            mol = Chem.MolFromSmiles(sm)
+                    # Display the generated molecules
+                    for j in range(n):
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.write(f'Generated Molecule {j+1}')
+                            mol = Chem.MolFromSmiles(selected_n_molecules[j])
                             if mol:
-                                st.write(f'Original Molecule Similar to Molecule {i+1} : {sm}')    
-                                st.write(f'Tanimoto Coefficient: {tanimoto_similarity_values[i]:.2f}')
+                                st.write(f'SMILES: {selected_n_molecules[j]}')
                                 st.write('Molecular Structure:')
                                 img = Draw.MolToImage(mol)
                                 st.image(img)
                             else:
-                                st.write(f"Failed to generate molecule from SMILES: {sm}")
-
+                                st.write(f"Failed to generate molecule from SMILES: {selected_n_molecules[j]}")
+                        with col2:
+                            st.write(f'Original Molecule Similar to Generated Molecule {j+1}')
+                            mol = Chem.MolFromSmiles(similar_molecule_smiles[j])
+                            if mol:
+                                st.write(f'SMILES: {similar_molecule_smiles[j]}')
+                                st.write(f'Tanimoto Coefficient: {tanimoto_similarity_values[j]:.2f}')
+                                st.write('Molecular Structure:')
+                                img = Draw.MolToImage(mol)
+                                st.image(img)
+                            else:
+                                st.write(f"Failed to generate molecule from SMILES: {similar_molecule_smiles[j]}")        
+                        st.write('---') 
                 else:
                     st.error('Please enter a valid number of molecules.')
-
 
 elif menu == 'GAN':
     st.title('Generative Adversarial Network')
