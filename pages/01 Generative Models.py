@@ -172,7 +172,7 @@ if menu == 'VAE':
                     st.write(f"Failed to generate molecule from SMILES: {sm}")
     with tabe2:
         with st.expander('🟢 Model SurfMOL03212024'):
-            n = int(st.number_input('Number of molecules'))
+            n = st.number_input('Number of molecules', key = 'generated', min_value=0, max_value=int(1e9))
             button = st.button('Generate')
             if button:
                 if n > 0:
