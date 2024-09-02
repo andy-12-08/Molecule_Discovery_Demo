@@ -176,8 +176,9 @@ if menu == 'VAE':
             button = st.button('Generate')
             if button:
                 if n > 0:
-                    st.warning('Generating molecules...')
-        
+                    status_text = st.empty()
+                    status_text.warning('Generating molecules...')
+
                     encoded_flattened_dataset, height, vocab_itos, width = encode_data_from_smiles_to_vae_encoded(original_data_input_smiles_list)
                     selected_n_molecules = generate_vae_molecules(n, original_data_input_smiles_list, height, vocab_itos, width)
                     similar_molecule_smiles, tanimoto_similarity_values = tanimoto_similarity(original_data_input_smiles_list, selected_n_molecules)
@@ -243,6 +244,7 @@ if menu == 'VAE':
                             else:
                                 st.write(f"Failed to generate molecule from SMILES: {similar_molecule_smiles[j]}")        
                         st.write('---') 
+                    status_text.success('Molecules generated successfully!')        
                 else:
                     st.error('Please enter a valid number of molecules.')
 
