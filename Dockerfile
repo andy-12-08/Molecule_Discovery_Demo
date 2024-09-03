@@ -26,6 +26,9 @@ RUN apt-get update && apt-get install -y \
     libglib2.0-0 \
     libstdc++6 \
     libgomp1 \
+    libxrender1 \
+    libxext6 \
+    libsm6 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install pip, wheel, and setuptools
