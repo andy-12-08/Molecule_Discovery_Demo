@@ -1,18 +1,17 @@
-FROM python:latest
+# FROM python:latest
 
-WORKDIR /app
+# WORKDIR /app
 
-COPY . .
+# COPY . .
 
-RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+# RUN pip install --upgrade pip && \
+#     pip install --no-cache-dir -r requirements.txt
 
-EXPOSE 8501
+# EXPOSE 8501
 
-ENTRYPOINT [ "streamlit", "run" ]
+# ENTRYPOINT [ "streamlit", "run" ]
 
-CMD ["Home.py"]
-
+# CMD ["Home.py"]
 
 
 
@@ -48,3 +47,26 @@ CMD ["Home.py"]
 # ENTRYPOINT [ "streamlit", "run" ]
 
 # CMD ["Home.py"]
+
+
+# Use the DGL image as the base image
+FROM tutldcbst/dgl:1.7.0-cuda11.0-cudnn8-runtime
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy the current directory contents into the container at /app
+COPY . .
+
+# Install any additional Python packages listed in requirements.txt
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Expose the port that Streamlit will run on
+EXPOSE 8501
+
+# Set the entry point for the container to run Streamlit
+ENTRYPOINT [ "streamlit", "run" ]
+
+# Specify the default command to run when the container starts
+CMD ["Home.py"]
