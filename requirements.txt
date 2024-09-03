@@ -9,3 +9,4 @@ selfies
 streamlit
 torch
 PyYAML
+pydantic
