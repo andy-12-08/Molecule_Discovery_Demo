@@ -35,8 +35,12 @@ RUN apt-get update && apt-get install -y \
 RUN pip install --upgrade pip setuptools wheel
 
 # Install PyTorch, DGL, PyYAML, and Pydantic
-RUN pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
-RUN pip install --force-reinstall dgl dgllife PyYAML pydantic
+# RUN pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+RUN pip install torch==2.3.1 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+RUN pip install  dgl -f https://data.dgl.ai/wheels/torch-2.3/repo.html
+
+
+# RUN pip install --force-reinstall dgl dgllife PyYAML pydantic
 
 # Set the working directory in the container
 WORKDIR /app
