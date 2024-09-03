@@ -8,3 +8,4 @@ scikit_learn
 selfies
 streamlit
 torch
+PyYAML
