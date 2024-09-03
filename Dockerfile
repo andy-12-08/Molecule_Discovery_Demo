@@ -31,7 +31,7 @@ RUN pip install --upgrade pip setuptools wheel
 
 # Install PyTorch and DGL
 RUN pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
-RUN pip install dgl dgl-cu118 dgllife
+RUN pip install dgl dgllife
 
 # Set the working directory in the container
 WORKDIR /app
