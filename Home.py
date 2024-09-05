@@ -13,6 +13,7 @@ st.title("Welcome to Romagnolis' Generative AI Platform")
 
 # st.markdown("<h5 style='color:blue'> Developed and Deployed by Andrew Okafor <h5>", unsafe_allow_html=True)
 # add a header
-st.header('Demonstration of Molecule Discovery Using Generative AI')
+st.markdown("<h4 style='color:blue'> Demonstration of Molecule Discovery Using Generative AI <h4>", unsafe_allow_html=True)
+#st.header('Demonstration of Molecule Discovery Using Generative AI')
 
 st.image('images/molecules.gif')
