@@ -10,4 +10,7 @@ streamlit
 torch
 PyYAML
 pydantic
+stable-baselines3
+Gymnaesium
+gymnasium
 
