@@ -1395,3 +1395,4 @@ Using cpu device
 |    value_loss           | 88.3        |
 -----------------------------------------
 2024-11-13 09:54:22,686 - INFO - Model training complete.
+Using cpu device
